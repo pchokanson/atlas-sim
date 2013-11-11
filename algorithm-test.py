@@ -29,7 +29,7 @@ from EarthFrame import *
 
 def force_torque(y):
 	x = y[0:3]
-	f = [-1, 0, 0] #(-G * mass * earth_mass / (np.linalg.norm(x) ** 3)) * x
+	f = [0, 0, 0] #(-G * mass * earth_mass / (np.linalg.norm(x) ** 3)) * x
 	t = m.matrix("0 0 0")
 	return (f, t)
 
@@ -70,18 +70,20 @@ def dX(y, t):
 	#print(dXdt)
 	return dXdt
 
-X0 = [i+1 for i in range(12)]
+X0 = [0 for i in range(12)]
 mass = 1.0
 r = 1.0
 # Sphere moment of inertia
 I_cm = [[0.4*mass*(r**2), 0, 0],
-[0, 0.4*mass*(r**2), 0],
-[0, 0, 0.4*mass*(r**2)]]
+        [0, 0.4*mass*(r**2), 0],
+        [0, 0, 0.4*mass*(r**2)]]
 
 I_cm_inv = np.linalg.inv(np.asmatrix(I_cm))
 
-print("   X = %s,\ndXdt = %s\n" % (X0, dX(X0, 0)))
+# rotation about x axis
+X0 = [0, 0, 0, 0, 0, 0, 0, 0, 0.1, 2*np.pi, 0, 0]
 
+print("   X = %s,\ndXdt = %s\n" % (X0, dX(X0, 0)))
 
 time = np.arange(0, 1, 0.01)
 y = odeint(dX, X0, time)
