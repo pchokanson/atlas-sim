@@ -19,12 +19,13 @@ from EarthFrame import *
 # 3  - vx    - x velocity (m/s)
 # 4  - vy    - y velocity (m/s)
 # 5  - vz    - z velocity (m/s)
-# 6  - psi   - first Euler angle (rad)
-# 7  - phi   - second Euler angle (rad)
-# 8  - theta - third Euler angle (rad)
-# 9  - wx    - rotation about x axis (rad/s)
-# 10 - wy    - rotation about y axis (rad/s)
-# 11 - wz    - rotation about z axis (rad/s)
+# 6  - q0    - first quaternion component
+# 7  - q1    - second quaternion component
+# 8  - q2    - third quaternion component
+# 9  - q3    - fourth quaternion component
+# 10 - wx    - rotation about x axis (rad/s)
+# 11 - wy    - rotation about y axis (rad/s)
+# 12 - wz    - rotation about z axis (rad/s)
 
 
 def force_torque(y):
@@ -34,7 +35,7 @@ def force_torque(y):
 	return (f, t)
 
 def dX(y, t):
-	dXdt = [0 for i in range(12)]
+	dXdt = [0 for i in range(13)]
 	force, torque = force_torque(y)
 
 	# Linear acceleration
@@ -44,33 +45,29 @@ def dX(y, t):
 
 	# Angular acceleration
 	alpha = I_cm_inv * np.asmatrix(torque).T
-	dXdt[9] = float(alpha[0])
-	dXdt[10] = float(alpha[1])
-	dXdt[11] = float(alpha[2])
+	dXdt[10] = float(alpha[0])
+	dXdt[11] = float(alpha[1])
+	dXdt[12] = float(alpha[2])
 
 	# Linear Velocity (xyz coordinates)
 	dXdt[0:3] = y[3:6]
 
 	# Angular velocity
+
+	# Quaternion derivative math: \dot{q} = Q \vec{w} / 2
+	# \dot{q}_0 = 0.5 * (-q1*w0 - q2*w1 - q3*w2)
+	dXdt[6] = 0.5 * (-y[7]*y[10] - y[8]*y[11] - y[9]*y[12])
+	# \dot{q}_1 = 0.5 * (+q0*w0 - q3*w1 - q2*w2)
+	dXdt[7] = 0.5 * ( y[6]*y[10] - y[9]*y[11] - y[8]*y[12])
+	# \dot{q}_2 = 0.5 * (+q3*w0 + q0*w1 - q1*w2)
+	dXdt[8] = 0.5 * ( y[9]*y[10] + y[6]*y[11] - y[7]*y[12])
+	# \dot{q}_3 = 0.5 * (-q2*w0 + q1*w1 + q0*w2)
+	dXdt[9] = 0.5 * (-y[8]*y[10] + y[7]*y[11] + y[6]*y[12])
 	
-	# Precomputed terms
-	sin_theta = np.sin(y[8])
-	cos_theta = np.cos(y[8])
-	sin_phi = np.sin(y[7])
-	cos_phi = np.sin(y[7])
-
-	# Angular terms derived from (3.5-2) in thomson1986introduction
-	# \dot{\psi} = (\omega_x \sin\phi + \omega_y \cos\phi)/\sin\theta
-	dXdt[6] = (y[9] * sin_phi + y[10] * cos_phi) / sin_theta
-	# \dot{\phi} = \omega_z - \frac{\cos\theta}{\sin\theta}(\omega_x \sin\phi + \omega_y \cos\phi)
-	dXdt[7] = y[11] - (y[9] * sin_phi + y[10] * cos_phi) * cos_theta / sin_theta
-	# \dot{\theta} = \omega_x \cos\phi - \omega_y \sin\phi
-	dXdt[8] = y[9] * cos_phi - y[10] * sin_phi
-
 	#print(dXdt)
 	return dXdt
 
-X0 = [0 for i in range(12)]
+X0 = [0 for i in range(13)]
 mass = 1.0
 r = 1.0
 # Sphere moment of inertia
@@ -81,14 +78,19 @@ I_cm = [[0.4*mass*(r**2), 0, 0],
 I_cm_inv = np.linalg.inv(np.asmatrix(I_cm))
 
 # rotation about x axis
-X0 = [0, 0, 0, 0, 0, 0, 0, 0, 0.1, 2*np.pi, 0, 0]
+X0 = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 4*np.pi, 0, 0]
 
 print("   X = %s,\ndXdt = %s\n" % (X0, dX(X0, 0)))
 
 time = np.arange(0, 1, 0.01)
 y = odeint(dX, X0, time)
 
+for i in range(10):
+	print(y[i], time[i])
+
 print(y[-1], time[-1])
 
+for i in range(100):
+	print(np.sqrt(y[i][6]**2 + y[i][7]**2 + y[i][8]**2 + y[i][9]**2))
 
 
