@@ -36,7 +36,7 @@ def force_torque(y):
 
 def dX(y, t):
 	dXdt = [0 for i in range(13)]
-	force, torque = force_torque(y)
+	force, torque = force_torque(y, t)
 
 	# Linear acceleration
 	dXdt[3] = force[0] / mass
