@@ -105,6 +105,12 @@ class RigidBody(object):
 		vlen = np.sqrt(Q[0]**2 + Q[1]**2 + Q[2]**2 + Q[3]**2)
 		self.state_vector[6:10] = [Q[i] / vlen for i in range(4)]
 
+	def set_mass(self, mass):
+		self.state_vector[13] = mass
+
+	def get_mass(self):
+		return self.state_vector[13]
+
 	def step(self, dt):
 		new_state = odeint(RigidBody.F_DX, self.state_vector, [self.t, self.t+dt],
 		                   args=(self.force_torque, self.f_Icm, self.state_f_dx[13:]))
