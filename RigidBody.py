@@ -21,7 +21,15 @@ class RigidBody(object):
 		I_cm = a[1](y, t)
 		mass = a[2](y, t)
 		
-		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T)
+		# The (w x I_cm w) term originates in the Newton-Euler equations, and
+		# should correspond to torque-free precession.  TODO: Validate this.
+		pseudo_torque = np.cross(np.asmatrix(y[10:13]), (I_cm * np.asmatrix(y[10:13]).T).T)
+		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque.T)
+		
+		# This assertion only holds for systems with diagonal I_cm, which is not
+		# the general case
+		#assert(np.linalg.norm(pseudo_torque) < 1e-6)
+		
 		#q_len = np.sqrt(y[6]**2 + y[7]**2 + y[8]**2 + y[9]**2)
 		#q = [yq / q_len for yq in y[6:10]]
 		
@@ -47,17 +55,16 @@ class RigidBody(object):
 		return dy
 	
 	def __init__(self):
-		self.state_vector = [0.0 for i in range(14)]
+		self.state_vector = [0.0 for i in range(13)]
 		self.state_vector[6] = 1.0
-		self.state_vector[13] = 1.0
 		self.state_names = ["x", "y", "z", "vx", "vy", "vz", "q0", "q1", "q2", "q3",
 		                    "wx", "wy", "wz"]
 		self.state_f_dx = [RigidBody.Zero for i in range(13)]
-
+		self.mass = 1.0
 		self.force_torque = lambda y, t: ([0,0,0],[0,0,0])
 		# I_cm for sphere = 0.4*mr^2
 		self.f_Icm = lambda y, t: np.eye(3) * 0.4*self.mass * 1.0**2
-		self.mass = 1.0
+		
 		self.f_mass = lambda y, t: self.mass
 
 		self.t = 0.0

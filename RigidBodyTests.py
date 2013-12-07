@@ -87,7 +87,7 @@ class RigidBodyTests(unittest.TestCase):
 			m = random.uniform(1e-6,1e6)
 			b.set_mass(m)
 			self.assertEqual(b.get_mass(), m)
-			self.assertEqual(b.state_vector[13], m)
+			self.assertEqual(b.mass, m)
 
 	def test_set_get_wxyz(self):
 		"""Test setters and getters for state angular velocity"""
@@ -142,7 +142,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 		b.set_wxyz([0,0,0])
 		b.set_vxyz([0,0,0])
 		b.force_torque = lambda y, t: ([0,0,0],[0,0,0])
-		b.f_Icm = lambda y, t: np.eye(3) * 0.4*y[13] * 1.0**2
+		b.f_Icm = lambda y, t: np.eye(3) * 0.4*b.mass * 1.0**2
 		for i in range(self.N):
 			b.step(1.0/self.N)
 			self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
@@ -160,7 +160,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			b.set_wxyz([0,0,0])
 			b.set_vxyz(vxyz)
 			b.force_torque = lambda y, t: ([0,0,0],[0,0,0])
-			b.f_Icm = lambda y, t: np.eye(3) * 0.4*y[13] * 1.0**2
+			b.f_Icm = lambda y, t: np.eye(3) * 0.4*b.mass * 1.0**2
 			for i in range(self.N):
 				b.step(1.0/self.N)
 				self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
@@ -181,7 +181,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			b.set_vxyz([0,0,0])
 			b.set_mass(mass)
 			b.force_torque = lambda y, t: (fxyz,[0,0,0])
-			b.f_Icm = lambda y, t: np.eye(3) * 0.4*y[13] * 1.0**2
+			b.f_Icm = lambda y, t: np.eye(3) * 0.4*mass * 1.0**2
 			for i in range(self.N):
 				b.step(1.0/self.N)
 				self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
@@ -230,7 +230,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			mass = random.uniform(0.1,100)
 			b.set_mass(mass)
 			b.force_torque = lambda y, t: (fxyz,[0,0,0])
-			b.f_Icm = lambda y, t: np.eye(3) * 0.4*y[13] * 1.0**2
+			b.f_Icm = lambda y, t: np.eye(3) * 0.4*mass * 1.0**2
 			b.set_wxyz(w)
 			for i in range(self.N):
 				b.step(1.0 / self.N)
