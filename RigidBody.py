@@ -19,15 +19,19 @@ class RigidBody(object):
 
 		force, torque = a[0](y, t)
 		I_cm = a[1](y, t)
+		mass = a[2](y, t)
+		
 		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T)
+		#q_len = np.sqrt(y[6]**2 + y[7]**2 + y[8]**2 + y[9]**2)
+		#q = [yq / q_len for yq in y[6:10]]
 		
 		dy[0] = y[3]
 		dy[1] = y[4]
 		dy[2] = y[5]
 		
-		dy[3] = force[0] / y[13]
-		dy[4] = force[1] / y[13]
-		dy[5] = force[2] / y[13]
+		dy[3] = force[0] / mass
+		dy[4] = force[1] / mass
+		dy[5] = force[2] / mass
 		
 		dy[6] = 0.5 * (-y[7]*y[10] - y[8]*y[11] - y[9]*y[12])
 		dy[7] = 0.5 * ( y[6]*y[10] - y[9]*y[11] - y[8]*y[12])
@@ -38,7 +42,7 @@ class RigidBody(object):
 		dy[11] = alpha[1]
 		dy[12] = alpha[2]
 
-		dy[13:] = [l(y,t) for l in a[2]]
+		dy[13:] = [l(y,t) for l in a[3]]
 		
 		return dy
 	
@@ -47,13 +51,14 @@ class RigidBody(object):
 		self.state_vector[6] = 1.0
 		self.state_vector[13] = 1.0
 		self.state_names = ["x", "y", "z", "vx", "vy", "vz", "q0", "q1", "q2", "q3",
-		                    "wx", "wy", "wz", "mass"]
-		self.state_f_dx = [RigidBody.Zero for i in range(14)]
+		                    "wx", "wy", "wz"]
+		self.state_f_dx = [RigidBody.Zero for i in range(13)]
 
 		self.force_torque = lambda y, t: ([0,0,0],[0,0,0])
 		# I_cm for sphere = 0.4*mr^2
-		self.f_Icm = lambda y, t: np.eye(3) * 0.4*y[13] * 1.0**2
-
+		self.f_Icm = lambda y, t: np.eye(3) * 0.4*self.mass * 1.0**2
+		self.mass = 1.0
+		self.f_mass = lambda y, t: self.mass
 
 		self.t = 0.0
 		self.epoch = datetime.datetime.now()
@@ -106,14 +111,14 @@ class RigidBody(object):
 		self.state_vector[6:10] = [Q[i] / vlen for i in range(4)]
 
 	def set_mass(self, mass):
-		self.state_vector[13] = mass
+		self.mass = mass
 
 	def get_mass(self):
-		return self.state_vector[13]
+		return self.mass
 
 	def step(self, dt):
 		new_state = odeint(RigidBody.F_DX, self.state_vector, [self.t, self.t+dt],
-		                   args=(self.force_torque, self.f_Icm, self.state_f_dx[13:]))
+		                   args=(self.force_torque, self.f_Icm, self.f_mass, self.state_f_dx[13:]))
 		self.state_vector = new_state[1]
 		self.t += dt
 
