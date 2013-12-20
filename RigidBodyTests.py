@@ -21,6 +21,28 @@ def vdiff_len(v1, v2):
 def random_vector(n=3,scale=5e8):
 	return [random.uniform(-scale,scale) for i in range(n)]
 
+def random_body(n_points=10, mass_scale=5e3, xyz_scale=5e8):
+	masses = [random.uniform(0.0, mass_scale/n_points) for i in range(n_points)]
+	x_p = [random.uniform(-xyz_scale,xyz_scale) for i in range(n_points)]
+	y_p = [random.uniform(-xyz_scale,xyz_scale) for i in range(n_points)]
+	z_p = [random.uniform(-xyz_scale,xyz_scale) for i in range(n_points)]
+	
+	mass = sum(masses)
+	x_cm = sum([x_i * m_i for x_i, m_i in zip(masses, x_p)]) / mass
+	y_cm = sum([y_i * m_i for y_i, m_i in zip(masses, y_p)]) / mass
+	z_cm = sum([z_i * m_i for z_i, m_i in zip(masses, z_p)]) / mass
+	
+	I_xx = sum([((y_i - y_cm)**2 + (z_i - z_cm)**2) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	I_yy = sum([((x_i - x_cm)**2 + (z_i - z_cm)**2) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	I_zz = sum([((x_i - x_cm)**2 + (y_i - y_cm)**2) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	I_xy = -sum([(x_i - x_cm) * (y_i - y_cm) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	I_yz = -sum([(y_i - y_cm) * (z_i - z_cm) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	I_xz = -sum([(x_i - x_cm) * (z_i - z_cm) * m_i for x_i, y_i, z_i, m_i in zip(x_p, y_p, z_p, masses)])
+	return mass, np.matrix([[I_xx, I_xy, I_xz],
+                          [I_xy, I_yy, I_yz],
+                          [I_xz, I_yz, I_zz]])
+
+
 class RigidBodyTests(unittest.TestCase):
 	def setUp(self):
 		self.testVectors = [[0,0,0],[1,0,0],[0,1,0],[0,0,1]]
@@ -315,6 +337,33 @@ class RigidBodyMotionTests(unittest.TestCase):
 				self.assertTrue(vdiff_len(b.get_vxyz(), axyz)/axyz_len < EPS_B)
 				self.assertTrue(vdiff_len(b.get_xyz(), xyz_f)/axyz_len < EPS_B)
 				# TODO: make an assertion that the quaternion does what we expect
+
+class RigidBodyPhysicsTests(unittest.TestCase):
+	def setUp(self):
+		self.N = 100 # number of steps
+		self.M = 10 # number of test cases
+	
+	def test_torque_free_precession(self):
+		for i in range(self.M):
+			b = RigidBody()
+			mass, I_cm = random_body()
+			#print("%s\n%s\n" %(I_cm, np.linalg.cholesky(I_cm)))
+			
+			b.f_mass = lambda y,t: mass
+			b.f_Icm = lambda y,t: I_cm
+			b.set_wxyz(random_vector(scale=1e1))
+			
+			L_g_0 = b.get_Lxyz_global()
+			len_L_g_0 = vlength(L_g_0)
+			#print("L_g_0 = %s" % L_g_0)
+			for i in range(self.N):
+				b.step(1.0/self.N)
+				#print("L_g = %s, %f" % (b.get_Lxyz_global(), vdiff_len(b.get_Lxyz_global(), L_g_0)/len_L_g_0))
+				self.assertTrue(vdiff_len(b.get_Lxyz_global(), L_g_0) / len_L_g_0 < EPS_B)
+				
+
+	def test_gyroscope_precession(self):
+		pass
 
 if __name__ == "__main__":
 	unittest.main(verbosity=2)

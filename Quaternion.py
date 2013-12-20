@@ -12,6 +12,8 @@ import numpy.matlib as m
 from numbers import Number
 
 class Quaternion(object):
+	__slots__ = ("q", "dtype")
+	
 	def __init__(self, q=None, dtype=np.float64):
 		self.dtype = dtype
 		if q is None:
@@ -37,20 +39,22 @@ class Quaternion(object):
 	def __mul__(self, other):
 		if isinstance(other, Number):
 			return Quaternion(q=self.q * other, dtype=self.dtype)
-		
+
 		q = self
-		r = other
+		r = other.q
 		x0 = r[0]*q[0] - r[1]*q[1] - r[2]*q[2] - r[3]*q[3]
 		x1 = r[0]*q[1] + r[1]*q[0] - r[2]*q[3] + r[3]*q[2]
 		x2 = r[0]*q[2] + r[1]*q[3] + r[2]*q[0] - r[3]*q[1]
 		x3 = r[0]*q[3] - r[1]*q[2] + r[2]*q[1] + r[3]*q[0]
 		return Quaternion(q=[x0, x1, x2, x3], dtype=self.dtype)
 
+
 	def __rmul__(self, other):
+		assert isinstance(other, Number)
 		return Quaternion(q=self.q * other, dtype=self.dtype)
 
 	#def __div__(self, other):
-		##return Quaternion(q=self.q / other, dtype=self.dtype)
+		#assert isinstance(other, Number)
 		#return self * (1 / other)
 
 	#def __pow__(self, other):
@@ -65,6 +69,9 @@ class Quaternion(object):
 	#def __setitem__(self, key, item):
 		##assert(0 <= key <= 3)
 		#self.q[key] = item
+
+	def inverse(self):
+		return Quaternion(q=[self[0], -self[1], -self[2], -self[3]])
 
 	def norm2(self):
 		return np.dot(self.q, self.q)
@@ -83,27 +90,6 @@ class Quaternion(object):
 	def to_matrix(self):
 		"""Returns 3x3 rotation matrix corresponding to this quaternion."""
 		rmat = np.empty((3,3), self.dtype)
-		#w, x, y, z = self.q
-
-		#xx2 = 2*x*x
-		#yy2 = 2*y*y
-		#zz2 = 2*z*z
-		#xy2 = 2*x*y
-		#wz2 = 2*w*z
-		#zx2 = 2*z*x
-		#wy2 = 2*w*y
-		#yz2 = 2*y*z
-		#wx2 = 2*w*x
-
-		#rmat[0,0] = 1. - yy2 - zz2
-		#rmat[0,1] = xy2 - wz2
-		#rmat[0,2] = zx2 + wy2
-		#rmat[1,0] = xy2 + wz2
-		#rmat[1,1] = 1. - xx2 - zz2
-		#rmat[1,2] = yz2 - wx2
-		#rmat[2,0] = zx2 - wy2
-		#rmat[2,1] = yz2 + wx2
-		#rmat[2,2] = 1. - xx2 - yy2
 
 		q1, q2, q3, q4 = self.q
 		rmat[0,0] = 1. - 2*q2*q2 - 2*q3*q3
@@ -278,9 +264,12 @@ class TestQuaternion(unittest.TestCase):
 			#R = Az * Ay * Ax
 			#print('\n%s\n\n%s' % (R, q1.to_matrix()))
 
+	@unittest.skip("Skipping unimplemented functions")
 	def test_axis_angle(self):
 		"""Verify that axis-angle conversions work correctly."""
 		self.assertTrue(False)
+	
+	@unittest.skip("Need to verify that types are maintained")
 	def test_types(self):
 		"""Verify that types are maintained and passed correctly.
 		Ignored for now."""

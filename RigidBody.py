@@ -1,4 +1,4 @@
-# algorithm-test.py
+# RigidBody.py
 # Vertical Limit Labs
 # Copyright (c) 2013 Peter Hokanson
 """Simple object-based rigid body implementation."""
@@ -23,8 +23,22 @@ class RigidBody(object):
 		
 		# The (w x I_cm w) term originates in the Newton-Euler equations, and
 		# should correspond to torque-free precession.  TODO: Validate this.
-		pseudo_torque = np.cross(np.asmatrix(y[10:13]), (I_cm * np.asmatrix(y[10:13]).T).T)
-		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque.T)
+		# TODO: I believe this needs to be calculated with a non-rotating reference
+		# frame.
+		#R = RigidBody.q_to_matrix(y[6:10])
+		#pseudo_torque = np.cross(np.asmatrix(y[10:13]), (I_cm * (np.asmatrix(y[10:13]) * R).T).T)
+		#alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque.T)
+		#print("alpha=%s" % alpha)
+
+		q = Quaternion(y[6:10])
+		q_w = Quaternion([0, y[10], y[11], y[12]])
+		q_dot = 0.5 * q * q_w
+
+		pt_q_vec = np.asmatrix((q.inverse() * q_dot)[1:4]).T
+		pseudo_torque = 4 * np.cross(pt_q_vec.T, (I_cm * pt_q_vec).T).T
+		#print("pt = %s" % pseudo_torque.T)
+		# Without torque:
+		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque)
 		
 		# This assertion only holds for systems with diagonal I_cm, which is not
 		# the general case
@@ -41,10 +55,11 @@ class RigidBody(object):
 		dy[4] = force[1] / mass
 		dy[5] = force[2] / mass
 		
-		dy[6] = 0.5 * (-y[7]*y[10] - y[8]*y[11] - y[9]*y[12])
-		dy[7] = 0.5 * ( y[6]*y[10] - y[9]*y[11] - y[8]*y[12])
-		dy[8] = 0.5 * ( y[9]*y[10] + y[6]*y[11] - y[7]*y[12])
-		dy[9] = 0.5 * (-y[8]*y[10] + y[7]*y[11] + y[6]*y[12])
+		dy[6:10] = q_dot
+		#dy[6] = 0.5 * (-y[7]*y[10] - y[8]*y[11] - y[9]*y[12])
+		#dy[7] = 0.5 * ( y[6]*y[10] - y[9]*y[11] - y[8]*y[12])
+		#dy[8] = 0.5 * ( y[9]*y[10] + y[6]*y[11] - y[7]*y[12])
+		#dy[9] = 0.5 * (-y[8]*y[10] + y[7]*y[11] + y[6]*y[12])
 
 		dy[10] = alpha[0]
 		dy[11] = alpha[1]
@@ -102,7 +117,23 @@ class RigidBody(object):
 		
 	def get_wxyz(self):
 		return self.state_vector[10:13]
-
+	
+	def get_wxyz_global(self):
+		"""Return angular velocity in global (nonrotating) reference frame."""
+		q = Quaternion(self.get_Q())
+		w_global = q * Quaternion([0] + list(self.get_wxyz())) * q.inverse()
+		return w_global[1:4]
+	
+	def get_Lxyz_global(self):
+		"""Return angular momentum in global (nonrotating) reference frame."""
+		q = Quaternion(self.get_Q())
+		# Note that local angular momentum doesn't really make sense, but it's part
+		# of our conversion process
+		I_cm = self.f_Icm(self.state_vector, self.t)
+		L_local = I_cm * np.asmatrix(self.get_wxyz()).T
+		L_global = q * Quaternion([0] + list(L_local)) * q.inverse()
+		return L_global[1:4]
+	
 	def set_Q(self, Q):
 		assert(len(Q) == 4)
 		assert(Q != [0,0,0,0])
@@ -143,6 +174,14 @@ if __name__ == "__main__":
 	#print(b)
 	
 	import unittest
+	#import cProfile, pstats
 	from RigidBodyTests import *
 
-	unittest.main(verbosity=2)
+	#unittest.main(verbosity=2)
+	#pr = cProfile.Profile()
+	#pr.enable()
+	unittest.main()
+	#pr.disable()
+	#ps = pstats.Stats(pr)
+	#ps.sort_stats('cumulative')
+	#ps.print_stats()
