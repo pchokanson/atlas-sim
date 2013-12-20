@@ -344,6 +344,8 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 		self.M = 10 # number of test cases
 	
 	def test_torque_free_precession(self):
+		"""Verify that angular momentum L is conserved in the global reference frame for 
+		asymmetric bodies."""
 		for i in range(self.M):
 			b = RigidBody()
 			mass, I_cm = random_body()
@@ -361,7 +363,7 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 				#print("L_g = %s, %f" % (b.get_Lxyz_global(), vdiff_len(b.get_Lxyz_global(), L_g_0)/len_L_g_0))
 				self.assertTrue(vdiff_len(b.get_Lxyz_global(), L_g_0) / len_L_g_0 < EPS_B)
 				
-
+	@unittest.skip("Unimplemented")
 	def test_gyroscope_precession(self):
 		pass
 
