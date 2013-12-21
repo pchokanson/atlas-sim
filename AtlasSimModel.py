@@ -34,6 +34,7 @@ class AtlasSimModelSimulation(IAtlasSimModel):
 		self.stepsize = 0.1 # s
 	
 	def getSimData(self):
+		self.sim_model.step(self.stepsize)
 		sv = self.sim_model.state_vector
 		date = self.sim_model.getDatetime()
 		t = self.sim_model.t
@@ -46,8 +47,9 @@ class AtlasSimModelSimulation(IAtlasSimModel):
 	
 	def run(self):
 		s = sched.scheduler(time.time, time.sleep)
-		d = self.getSimData()
-		self.update_views(d)
+		for i in range(100):
+			d = self.getSimData()
+			self.update_views(d)
 
 class AtlasSimModelPlayback(IAtlasSimModel):
 	"""Reads a simulation data file for testing"""

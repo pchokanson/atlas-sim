@@ -363,9 +363,10 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 				#print("L_g = %s, %f" % (b.get_Lxyz_global(), vdiff_len(b.get_Lxyz_global(), L_g_0)/len_L_g_0))
 				self.assertTrue(vdiff_len(b.get_Lxyz_global(), L_g_0) / len_L_g_0 < EPS_B)
 				
-	@unittest.skip("Unimplemented")
 	def test_gyroscope_precession(self):
-		pass
+		"""Verify that gyroscopic precession works as expected"""
+		for i in range(self.M):
+			b = RigidBody()
 
 if __name__ == "__main__":
 	unittest.main(verbosity=2)

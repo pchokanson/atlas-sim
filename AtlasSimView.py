@@ -7,6 +7,7 @@ import queue
 import sched, time
 import sys
 import json
+import pickle
 
 from AtlasSimData import AtlasSimData
 
@@ -31,9 +32,15 @@ class AtlasSimViewLogging(IAtlasSimView):
 		"""Update this view with new data -- dump it to a file"""
 		d = {}
 		for slot in AtlasSimData.__slots__:
-			d[slot] = getattr(data, slot)
-		d["date"] = d["date"].isoformat()
+			if slot == "date":
+				d["date"] = data.date.isoformat()
+			elif slot == "t":
+				d["t"] = data.t
+			else:
+				d[slot] = list(getattr(data, slot))
+
 		json.dump(d, self.logfile)
+		print("\n")
 
 if __name__ == "__main__":
 	pass

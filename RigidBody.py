@@ -14,6 +14,18 @@ class RigidBody(object):
 	def Zero(y, t, *a):
 		return 0.0
 
+	def local2body(q, x):
+		"""Convert a vector in the local inertial space to the body reference 
+		frame."""
+		q1 = Quaternion(q)
+		x = Quaternion([0, x[0], x[1], x[2]])
+		
+		return q1 * x * q1.inverse()
+	
+	def body2local(q, x):
+		"""Convert a vector in the body space to the local inertial reference 
+		frame."""
+	
 	def F_DX(y, t, *a):
 		dy = [0.0 for i in range(len(y))]
 

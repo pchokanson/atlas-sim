@@ -17,9 +17,13 @@ class AtlasSimData(object):
 		self.q = q
 		self.wxyz = wxyz
 		self.costates = costates
+	
+	def __repr__(self):
+		return "AtlasSimData: date=%s\nt=%f\npxyz=%s\nq=%s\nvxyz=%s\nwxyz=%s\ncostates=%s\n" % \
+			(self.date, self.t, self.pxyz, self.q, self.vxyz, self.wxyz, self.costates)
 
 AtlasSimDataZero = AtlasSimData(
-	datetime.fromtimestamp(0),
+	datetime.datetime.fromtimestamp(0),
 	0,
 	[0,0,0],
 	[0,0,0],
