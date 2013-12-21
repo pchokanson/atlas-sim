@@ -6,8 +6,10 @@
 
 from RigidBody import RigidBody
 import numpy as np
+import math
 import unittest
 import random
+from Quaternion import Quaternion
 
 EPS_A = 1e-10 # tolerance for simple calculations
 EPS_B = 1e-5 # tolerance for more lengthy calculations
@@ -364,9 +366,63 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 				self.assertTrue(vdiff_len(b.get_Lxyz_global(), L_g_0) / len_L_g_0 < EPS_B)
 				
 	def test_gyroscope_precession(self):
-		"""Verify that gyroscopic precession works as expected"""
-		for i in range(self.M):
-			b = RigidBody()
+		"""Verify that gyroscopic precession works as expected."""
+		b = RigidBody()
+		
+		w_mult = 100
+		w = w_mult / (2 * np.pi)
+		I_cm = np.eye(3)
+		mass = 1.0
+		
+		b.f_mass = lambda y,t: mass
+		b.f_Icm = lambda y,t: I_cm
+		b.set_wxyz([w,0,0])
+		
+		def force_torque(y, t):
+			# Force is actually zero (at least for this case, where the center of
+			# mass isn't moving).
+			force = [0,0,0]
+			
+			# Torque is constantly applied from 
+			q = Quaternion(y[6:10])
+			q.normalize()
+			F = Quaternion([0,0,0,-1])
+			
+			F_lcl = (q.inverse() * F * q)[1:4]
+			torque = np.cross([1,0,0], F_lcl)
+			return (force, torque)
+		b.force_torque = force_torque
+		
+		EPS = 1e-2
+		N = 200
+		for i in range(N):
+			b.step(w_mult/(N*4))
+			b.normalize_Q()
+		#print("t: %8f, %s" % (b.t, RigidBody.local2body(b.get_Q(),[1,0,0])))
+		#print("diff = %f" % vdiff_len([0,1,0], RigidBody.local2body(b.get_Q(),[1,0,0])))
+		self.assertTrue(vdiff_len([0,1,0], RigidBody.local2body(b.get_Q(),[1,0,0])) < EPS)
+		
+		for i in range(N):
+			b.step(w_mult/(N*4))
+			b.normalize_Q()
+		#print("t: %8f, %s" % (b.t, RigidBody.local2body(b.get_Q(),[1,0,0])))
+		#print("diff = %f" % vdiff_len([-1,0,0], RigidBody.local2body(b.get_Q(),[1,0,0])))
+		self.assertTrue(vdiff_len([-1,0,0], RigidBody.local2body(b.get_Q(),[1,0,0])) < EPS)
+		
+		for i in range(N):
+			b.step(w_mult/(N*4))
+			b.normalize_Q()
+		#print("t: %8f, %s" % (b.t, RigidBody.local2body(b.get_Q(),[1,0,0])))
+		#print("diff = %f" % vdiff_len([0,-1,0], RigidBody.local2body(b.get_Q(),[1,0,0])))
+		self.assertTrue(vdiff_len([0,-1,0], RigidBody.local2body(b.get_Q(),[1,0,0])) < EPS)
+		
+		for i in range(N):
+			b.step(w_mult/(N*4))
+			b.normalize_Q()
+		#print("t: %8f, %s" % (b.t, RigidBody.local2body(b.get_Q(),[1,0,0])))
+		#print("diff = %f" % vdiff_len([1,0,0], RigidBody.local2body(b.get_Q(),[1,0,0])))
+		self.assertTrue(vdiff_len([1,0,0], RigidBody.local2body(b.get_Q(),[1,0,0])) < EPS)
+
 
 if __name__ == "__main__":
 	unittest.main(verbosity=2)
