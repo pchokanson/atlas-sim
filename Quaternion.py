@@ -11,6 +11,27 @@ import numpy.matlib as m
 
 from numbers import Number
 
+try:
+	import CQuaternion
+	CYTHON_CQUATERNION = True
+except:
+	print("CQuaternion failed, using Python fallback")
+	CYTHON_CQUATERNION = False
+#CYTHON_CQUATERNION = False
+
+def mult_q_q(q1, q2):
+	if CYTHON_CQUATERNION:
+		return CQuaternion.mult_q_q(self.q, other.q)
+	else:
+		x0 = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3]
+		x1 = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2]
+		x2 = q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1]
+		x3 = q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0]
+		return np.array([x0, x1, x2, x3])
+
+def mult_s_q(s, q1):
+	return [s * q for q in q1]
+
 class Quaternion(object):
 	__slots__ = ("q", "dtype")
 	
@@ -22,7 +43,7 @@ class Quaternion(object):
 			self.q = np.asarray(q, dtype)
 
 	def __str__(self):
-		return "[%f, %f, %f, %f]" % (self.q[0], self.q[1], self.q[2], self.q[3])
+		return "Q[%f, %f, %f, %f]" % (self.q[0], self.q[1], self.q[2], self.q[3])
 	
 	def __eq__(self, other):
 		if (self - other).length() < 0.0001:
@@ -39,14 +60,16 @@ class Quaternion(object):
 	def __mul__(self, other):
 		if isinstance(other, Number):
 			return Quaternion(q=self.q * other, dtype=self.dtype)
-
-		q = self
-		r = other.q
-		x0 = r[0]*q[0] - r[1]*q[1] - r[2]*q[2] - r[3]*q[3]
-		x1 = r[0]*q[1] + r[1]*q[0] - r[2]*q[3] + r[3]*q[2]
-		x2 = r[0]*q[2] + r[1]*q[3] + r[2]*q[0] - r[3]*q[1]
-		x3 = r[0]*q[3] - r[1]*q[2] + r[2]*q[1] + r[3]*q[0]
-		return Quaternion(q=[x0, x1, x2, x3], dtype=self.dtype)
+		elif CYTHON_CQUATERNION:
+			return Quaternion(CQuaternion.mult_q_q(self.q, other.q))
+		else:
+			q1 = self.q
+			q2 = other.q
+			x0 = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3]
+			x1 = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2]
+			x2 = q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1]
+			x3 = q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0]
+			return Quaternion(q=[x0, x1, x2, x3], dtype=self.dtype)
 
 
 	def __rmul__(self, other):
@@ -143,7 +166,14 @@ class Quaternion(object):
 
 
 class TestQuaternion(unittest.TestCase):
-
+	DEBUG = False
+	
+	def setUp(self):
+		if TestQuaternion.DEBUG:
+			self.debug = print
+		else:
+			self.debug = lambda x: None
+	
 	EPS = 1e-10
 
 	def rand_quaternion(self):
@@ -202,7 +232,28 @@ class TestQuaternion(unittest.TestCase):
 		q1 = Quaternion([0,0,0,1])
 		q2 = Quaternion([0,0,0,0])
 		self.assertEqual(q2, q1 * q2)
+		
+		q1 = Quaternion([1,2,3,4])
+		q2 = Quaternion([5,6,7,8])
+		qa = q1 * q2
+		qe = Quaternion([-60,12,30,24])
+		self.debug("qa=%s\nqe=%s" % (qa, qe))
+		self.assertEqual(qe, qa)
 
+		q1 = Quaternion([1,2,3,4])
+		q2 = Quaternion([-5,6,-7,8])
+		qa = q1 * q2
+		qe = Quaternion([-28,48,-14,-44])
+		self.debug("qa=%s\nqe=%s" % (qa, qe))
+		self.assertEqual(qe, qa)
+		
+		q1 = Quaternion([5,-3,7,9])
+		q2 = Quaternion([1,4,6,2])
+		qa = q1 * q2
+		qe = Quaternion([-43,-23,79,-27])
+		self.debug("qa=%s\nqe=%s" % (qa, qe))
+		self.assertEqual(qe, qa)
+		
 		q1 = Quaternion([1,2,3,4])
 		self.assertEqual(q1*2, Quaternion([2,4,6,8]))
 

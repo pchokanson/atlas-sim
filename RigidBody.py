@@ -38,22 +38,14 @@ class RigidBody(object):
 		mass = a[2](y, t)
 		
 		# The (w x I_cm w) term originates in the Newton-Euler equations, and
-		# should correspond to torque-free precession.  TODO: Validate this.
-		# TODO: I believe this needs to be calculated with a non-rotating reference
-		# frame.
-		#R = RigidBody.q_to_matrix(y[6:10])
-		#pseudo_torque = np.cross(np.asmatrix(y[10:13]), (I_cm * (np.asmatrix(y[10:13]) * R).T).T)
-		#alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque.T)
-		#print("alpha=%s" % alpha)
-
+		# should correspond to torque-free precession.
 		q = Quaternion(y[6:10])
 		q_w = Quaternion([0, y[10], y[11], y[12]])
 		q_dot = 0.5 * q * q_w
 
 		pt_q_vec = np.asmatrix((q.inverse() * q_dot)[1:4]).T
 		pseudo_torque = 4 * np.cross(pt_q_vec.T, (I_cm * pt_q_vec).T).T
-		#print("pt = %s" % pseudo_torque.T)
-		# Without torque:
+
 		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque)
 		
 		# This assertion only holds for systems with diagonal I_cm, which is not
@@ -183,21 +175,27 @@ class RigidBody(object):
 		return str(self.getDatetime()) + " " + str(dict(zip(self.state_names, self.state_vector)))
 
 if __name__ == "__main__":
+	PROFILE = True
 	b = RigidBody()
 
-	#print(b)
-	b.step(0.1)
-	#print(b)
+	##print(b)
+	#b.step(0.1)
+	##print(b)
 	
 	import unittest
-	#import cProfile, pstats
+	import cProfile, pstats
 	from RigidBodyTests import *
 
-	#unittest.main(verbosity=2)
-	#pr = cProfile.Profile()
-	#pr.enable()
-	unittest.main()
-	#pr.disable()
-	#ps = pstats.Stats(pr)
-	#ps.sort_stats('cumulative')
-	#ps.print_stats()
+	if PROFILE:
+		pr = cProfile.Profile()
+		print("Running unit tests with cProfile")
+		pr.enable()
+		unittest.main(exit=False)
+		pr.disable()
+		print("Printing results to RigidBody.log")
+		pr.dump_stats("RigidBody.log")
+		ps = pstats.Stats(pr)
+		ps.sort_stats('cumulative')
+		ps.print_stats()
+	else:
+		unittest.main(verbosity=2, exit=False)
