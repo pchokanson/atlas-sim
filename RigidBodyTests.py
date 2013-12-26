@@ -151,6 +151,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 		"""Test that time passes correctly."""
 		b = RigidBody()
 		b.t = 0
+		b.start()
 		b.step(0.1)
 		self.assertTrue(abs(b.t - 0.1) < EPS_A)
 		b.step(0.2)
@@ -167,6 +168,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 		b.set_vxyz([0,0,0])
 		b.force_torque = lambda y, t: ([0,0,0],[0,0,0])
 		b.f_Icm = lambda y, t: np.eye(3) * 0.4*b.mass * 1.0**2
+		b.start()
 		for i in range(self.N):
 			b.step(1.0/self.N)
 			self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
@@ -183,14 +185,16 @@ class RigidBodyMotionTests(unittest.TestCase):
 			b.set_xyz([0,0,0])
 			b.set_wxyz([0,0,0])
 			b.set_vxyz(vxyz)
-			b.force_torque = lambda y, t: ([0,0,0],[0,0,0])
+			b.force_torque = lambda y, t: ([0,0,0], [0,0,0])
 			b.f_Icm = lambda y, t: np.eye(3) * 0.4*b.mass * 1.0**2
+			b.start()
+			#print("v=%s\ns=%s\nl=%s\n" % (vxyz,b,vdiff_len(b.get_xyz(),vxyz)))
 			for i in range(self.N):
 				b.step(1.0/self.N)
 				self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
 				self.assertTrue(vdiff_len(b.get_wxyz(),[0,0,0]) < EPS_A)
 				self.assertTrue(vdiff_len(b.get_vxyz(),vxyz) < EPS_A)
-			#print(vxyz,b,vdiff_len(b.get_xyz(),vxyz))
+			#print("v=%s\ns=%s\nl=%s\n" % (vxyz,b,vdiff_len(b.get_xyz(),vxyz)))
 			self.assertTrue(vdiff_len(b.get_xyz(),vxyz) / vlength(vxyz) < EPS_B)
 
 	def test_accelerating_linear(self):
@@ -206,6 +210,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			b.set_mass(mass)
 			b.force_torque = lambda y, t: (fxyz,[0,0,0])
 			b.f_Icm = lambda y, t: np.eye(3) * 0.4*mass * 1.0**2
+			b.start()
 			for i in range(self.N):
 				b.step(1.0/self.N)
 				self.assertTrue(vdiff_len(b.get_Q(),[1,0,0,0]) < EPS_A)
@@ -221,6 +226,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 		for w in self.w_states:
 			b = RigidBody()
 			b.set_wxyz(w)
+			b.start()
 			for i in range(self.N):
 				b.step(1.0 / self.N)
 				#if i % 10 == 0:
@@ -237,6 +243,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			vxyz = random_vector()
 			b.set_vxyz(vxyz)
 			b.set_wxyz(w)
+			b.start()
 			for i in range(self.N):
 				b.step(1.0 / self.N)
 				#if i % 10 == 0:
@@ -256,6 +263,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 			b.force_torque = lambda y, t: (fxyz,[0,0,0])
 			b.f_Icm = lambda y, t: np.eye(3) * 0.4*mass * 1.0**2
 			b.set_wxyz(w)
+			b.start()
 			for i in range(self.N):
 				b.step(1.0 / self.N)
 				#if i % 10 == 0:
@@ -281,6 +289,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 				b.set_mass(mass)
 				b.force_torque = lambda y, t: ([0,0,0],txyz)
 				b.f_Icm = lambda y, t: I_cm
+				b.start()
 				for i in range(self.N):
 					b.step(1.0 / self.N)
 					#if i % 10 == 0:
@@ -303,6 +312,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 				b.set_mass(mass)
 				b.force_torque = lambda y, t: ([0,0,0],txyz)
 				b.f_Icm = lambda y, t: I_cm
+				b.start()
 				for i in range(self.N):
 					b.step(1.0 / self.N)
 					#if i % 10 == 0:
@@ -326,6 +336,7 @@ class RigidBodyMotionTests(unittest.TestCase):
 				b.set_mass(mass)
 				b.force_torque = lambda y, t: (fxyz,txyz)
 				b.f_Icm = lambda y, t: I_cm
+				b.start()
 				for i in range(self.N):
 					b.step(1.0 / self.N)
 					#if i % 10 == 0:
@@ -360,6 +371,7 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 			L_g_0 = b.get_Lxyz_global()
 			len_L_g_0 = vlength(L_g_0)
 			#print("L_g_0 = %s" % L_g_0)
+			b.start()
 			for i in range(self.N):
 				b.step(1.0/self.N)
 				#print("L_g = %s, %f" % (b.get_Lxyz_global(), vdiff_len(b.get_Lxyz_global(), L_g_0)/len_L_g_0))
@@ -395,6 +407,7 @@ class RigidBodyPhysicsTests(unittest.TestCase):
 		
 		EPS = 1e-2
 		N = 200
+		b.start()
 		for i in range(N):
 			b.step(w_mult/(N*4))
 			b.normalize_Q()

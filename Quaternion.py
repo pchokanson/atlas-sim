@@ -21,7 +21,7 @@ except:
 
 def mult_q_q(q1, q2):
 	if CYTHON_CQUATERNION:
-		return CQuaternion.mult_q_q(self.q, other.q)
+		return CQuaternion.mult_q_q(q1, q2)
 	else:
 		x0 = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3]
 		x1 = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2]
@@ -30,7 +30,23 @@ def mult_q_q(q1, q2):
 		return np.array([x0, x1, x2, x3])
 
 def mult_s_q(s, q1):
-	return [s * q for q in q1]
+	return np.asarray([s * q for q in q1])
+	
+def inv_q(q1):
+	return np.asarray([q1[0], -q1[1], -q1[2], -q1[3]])
+
+def trans_v_q(v, q):
+	v_q = np.array([0, v[0], v[1], v[2]])
+	return mult_q_q(mult_q_q(q, v), inv_q(q))
+
+def str_q(q):
+	return "Q[%f, %f, %f, %f]" % (q[0], q[1], q[2], q[3])
+
+def cross_v_v(u, v):
+	s0 = u[1]*v[2] - u[2]*v[1]
+	s1 = u[2]*v[0] - u[0]*v[2]
+	s2 = u[0]*v[1] - u[1]*v[0]
+	return np.array([s0, s1, s2])
 
 class Quaternion(object):
 	__slots__ = ("q", "dtype")

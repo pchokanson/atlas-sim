@@ -7,7 +7,9 @@ import datetime
 import numpy as np
 import numpy.matlib as m
 from scipy.integrate import odeint
+import scipy
 from Quaternion import Quaternion
+import Quaternion as Q
 from EarthFrame import *
 
 class RigidBody(object):
@@ -30,7 +32,8 @@ class RigidBody(object):
 		
 		return (q1.inverse() * x * q1).q[1:4]
 	
-	def F_DX(y, t, *a):
+	def F_DX(t, y, a):
+		#print("F_DX:\n\ty=%s\n\tt=%s\n\ta=%s" % (y, t, a))
 		dy = [0.0 for i in range(len(y))]
 
 		force, torque = a[0](y, t)
@@ -39,11 +42,11 @@ class RigidBody(object):
 		
 		# The (w x I_cm w) term originates in the Newton-Euler equations, and
 		# should correspond to torque-free precession.
-		q = Quaternion(y[6:10])
-		q_w = Quaternion([0, y[10], y[11], y[12]])
-		q_dot = 0.5 * q * q_w
+		q = y[6:10]
+		q_w = np.asarray([0, y[10], y[11], y[12]])
+		q_dot = Q.mult_s_q(0.5, Q.mult_q_q(q, q_w))
 
-		pt_q_vec = np.asmatrix((q.inverse() * q_dot)[1:4]).T
+		pt_q_vec = np.asmatrix(Q.mult_q_q(Q.inv_q(q), q_dot)[1:4]).T
 		pseudo_torque = 4 * np.cross(pt_q_vec.T, (I_cm * pt_q_vec).T).T
 
 		alpha = np.linalg.solve(I_cm,np.asmatrix(torque).T - pseudo_torque)
@@ -74,8 +77,8 @@ class RigidBody(object):
 		dy[12] = alpha[2]
 
 		dy[13:] = [l(y,t) for l in a[3]]
-		
-		return dy
+		#print("dy=%s" % dy)
+		return np.asarray(dy)
 	
 	def __init__(self):
 		self.state_vector = [0.0 for i in range(13)]
@@ -96,11 +99,22 @@ class RigidBody(object):
 		self.facc = [0,0,0]
 		self.tacc = [0,0,0]
 		
+		self.integrator = scipy.integrate.ode(RigidBody.F_DX)
+		self.integrator.set_integrator("dopri5", first_step=0.1, max_step=1.0)
+		self.__started = False
+
+	def start(self):
+		#self.F_DX = partial(
+		self.__started = True
+		self.integrator.set_initial_value(self.state_vector, self.t)
+		self.integrator.set_f_params((self.force_torque, self.f_Icm, self.f_mass, self.state_f_dx[13:]))
+
 	def add_state(self, x0, name, f_dx):
 		"""Add a state to the state vector.
 		 x0 - initial value at current time step
 		 name - string name used for data output
 		 f_dx - function(state, time, args)"""
+		assert self.__started == False
 		self.state_vector.append(x0)
 		self.state_names.append(name)
 		self.state_f_dx.append(f_dx)
@@ -163,10 +177,13 @@ class RigidBody(object):
 		return self.mass
 
 	def step(self, dt):
-		new_state = odeint(RigidBody.F_DX, self.state_vector, [self.t, self.t+dt],
-		                   args=(self.force_torque, self.f_Icm, self.f_mass, self.state_f_dx[13:]))
-		self.state_vector = new_state[1]
+		
+		#new_state = odeint(RigidBody.F_DX, self.state_vector, [self.t, self.t+dt],
+		                   #args=(self.force_torque, self.f_Icm, self.f_mass, self.state_f_dx[13:]))
+		self.state_vector = self.integrator.integrate(self.t + dt)
+		#self.state_vector = new_state[1]
 		self.t += dt
+		#print("t: %f, s=%s" % (self.t, self.state_vector))
 
 	def getDatetime(self):
 		return self.epoch + datetime.timedelta(seconds=self.t)
@@ -175,7 +192,7 @@ class RigidBody(object):
 		return str(self.getDatetime()) + " " + str(dict(zip(self.state_names, self.state_vector)))
 
 if __name__ == "__main__":
-	PROFILE = True
+	PROFILE = False
 	b = RigidBody()
 
 	##print(b)
