@@ -12,16 +12,16 @@ import numpy.matlib as m
 from numbers import Number
 
 try:
-	import CQuaternion
-	CYTHON_CQUATERNION = True
+	import CFastMath
+	CYTHON_CFASTMATH = True
 except:
-	print("CQuaternion failed, using Python fallback")
-	CYTHON_CQUATERNION = False
-#CYTHON_CQUATERNION = False
+	print("CFastMath failed, using Python fallback")
+	CYTHON_CFASTMATH = False
+#CYTHON_CFASTMATH = False
 
 def mult_q_q(q1, q2):
-	if CYTHON_CQUATERNION:
-		return CQuaternion.mult_q_q(q1, q2)
+	if CYTHON_CFASTMATH:
+		return CFastMath.mult_q_q(q1, q2)
 	else:
 		x0 = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3]
 		x1 = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2]
@@ -76,8 +76,8 @@ class Quaternion(object):
 	def __mul__(self, other):
 		if isinstance(other, Number):
 			return Quaternion(q=self.q * other, dtype=self.dtype)
-		elif CYTHON_CQUATERNION:
-			return Quaternion(CQuaternion.mult_q_q(self.q, other.q))
+		elif CYTHON_CFASTMATH:
+			return Quaternion(CFastMath.mult_q_q(self.q, other.q))
 		else:
 			q1 = self.q
 			q2 = other.q

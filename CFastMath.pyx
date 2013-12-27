@@ -1,12 +1,11 @@
 #!python
 # cython: profile=True
 # 
-# Fast Cython implementations of quaternion operations, for a faster quaternion
-# library.
+# Fast Cython implementations of vector math operations
 # - multiply two quaternions
 #
 # Buid with the following:
-# $ cython3 -a CQuaternion.pyx && gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python3.3/ -o CQuaternion.so CQuaternion.c -march=native
+# $ cython3 -a CFastMath.pyx && gcc -shared -pthread -fPIC -fwrapv -O3 -Wall -fno-strict-aliasing -I/usr/include/python3.3/ -o CFastMath.so CFastMath.c -march=native
 
 import numpy as np
 cimport numpy as np

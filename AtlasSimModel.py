@@ -32,6 +32,7 @@ class AtlasSimModelSimulation(IAtlasSimModel):
 		IAtlasSimModel.__init__(self, realtime)
 		self.sim_model = RigidBody()
 		self.stepsize = 0.1 # s
+		self.sim_model.start()
 	
 	def getSimData(self):
 		self.sim_model.step(self.stepsize)
