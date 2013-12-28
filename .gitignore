@@ -1,3 +1,7 @@
 *.py~
 *.pyc
 
+CFastMath.c
+CFastMath.html
+CFastMath.so
+RigidBody.log
