@@ -1,7 +1,23 @@
 # RigidBody.py
 # Vertical Limit Labs
 # Copyright (c) 2013 Peter Hokanson
-"""Simple object-based rigid body implementation."""
+"""Simple object-based rigid body implementation.
+
+The states are:
+0  - px    - x axis coordinate (m)
+1  - py    - y axis coordinate (m)
+2  - pz    - z axis coordinate (m)
+3  - vx    - x velocity (m/s)
+4  - vy    - y velocity (m/s)
+5  - vz    - z velocity (m/s)
+6  - q0    - first quaternion component
+7  - q1    - second quaternion component
+8  - q2    - third quaternion component
+9  - q3    - fourth quaternion component
+10 - wx    - rotation about x axis (rad/s)
+11 - wy    - rotation about y axis (rad/s)
+12 - wz    - rotation about z axis (rad/s)
+"""
 
 import datetime
 import numpy as np
