@@ -28,7 +28,7 @@ import random
 earth_radius = 6371000.0 # Radius of the earth, m
 earth_mass = 5.972E24 # mass of the earth, kg
 earth_density = earth_mass / ((4*pi/3)*(earth_radius **3))
-G = 5.56384e-11 # m^3 / kg-s^2, universal gravitational constant
+G = 6.67384e-11 # m^3 / kg-s^2, universal gravitational constant
 
 # The J2000 epoch is defined in terms of Terrestrial Time.  Using UTC, this is
 # the equivalent time, only off by a minute or so due to leap seconds over the
