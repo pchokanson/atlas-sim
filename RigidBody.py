@@ -204,6 +204,12 @@ class RigidBody(object):
 	def getDatetime(self):
 		return self.epoch + datetime.timedelta(seconds=self.t)
 
+	def set_epoch(self, epoch):
+		self.epoch = epoch
+	
+	def get_epoch(self):
+		return self.epoch
+
 	def __str__(self):
 		return str(self.getDatetime()) + " " + str(dict(zip(self.state_names, self.state_vector)))
 

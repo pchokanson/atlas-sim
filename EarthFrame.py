@@ -76,6 +76,11 @@ def ECITime2LatLonElev(eci, time, epoch=epoch_j2000):
 
 _EPS = 1e-6
 class TestEarthFrame(unittest.TestCase):
+	def test_constants(self):
+		g = G * earth_mass / (earth_radius)**2
+		#print(g)
+		self.assertTrue(abs(g - 9.80665) < 0.05)
+
 	def test_LatLonElevTime2ECI(self):
 		test_input = [( 0.0, 0.0, 0.0, epoch_j2000), # Off the coast of Africa
 		              (90.0, 0.0, 0.0, epoch_j2000), # At the north pole
